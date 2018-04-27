@@ -27,6 +27,6 @@ library(ggplot2)
 #Load the data from local storage
 df = read_csv('c:/Users/iboyd/Documents/GRAD/S-2018/qtm6300/F2F_2_Wayfair/wayfair_click_stream_short.csv')
 
-nrow(distinct(df(, 'HashSKU')))
+
 
      
