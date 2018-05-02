@@ -2,10 +2,11 @@
 set.seed(1234)
 library(readr)
 library(gmodels)
+library(rpart)
+library(rpart.plot)
 
 
-IAN = TRUE
-
+IAN = FALSE
 
 if( IAN ){
   source("c:/Users/iboyd/Documents/GRAD/S-2018/qtm6300/BabsonAnalytics.R")
@@ -17,6 +18,17 @@ if( IAN ){
   df = read_csv("C:/Users/wolfeb3/desktop/wayfair_click_stream_short.csv")
 }
 
+<<<<<<< HEAD:Wayfair - Tree.R
+# Clean data
+
+#Remove un-needed columns
+
+df$TestID = NULL;
+df$sessionstartdate = NULL;
+df$opid = NULL;
+df$HashSKU = NULL;
+#df = df[df$HadBasket == TRUE, ]
+=======
 
 #
 # Format Data
@@ -24,10 +36,21 @@ if( IAN ){
 #
 df$HadBasket = as.factor(df$HadBasket)
 df$HadBasket = as.logical(df$HadBasket)
+<<<<<<< HEAD:wayfair_logistic_regression.R
+=======
 #df = df[df$HadBasket == 1, ]
+>>>>>>> 455b6c6f468d5f862792dc57021f901e12c5f635:wayfair_logistic_regression.R
+>>>>>>> 2ccb3b413829d8df7f298a1768069d383cc2632c:Wayfair - Tree.R
 
-df$HadBasket = as.factor(df$HadBasket)
-df$HadBasket = as.logical(df$HadBasket)
+#
+# Only look at those who had a basket
+# 
+df = df[df$HadBasket == 1, ]
+
+# Make NULL values "other"
+df$MkcName[is.na(df$MkcName)] = '(Other)'
+# df$MkcName['(Other)'] = "AA_OTHER";
+
 df$HadReceiptPage = as.factor(df$HadReceiptPage)
 df$HadReceiptPage = as.logical(df$HadReceiptPage)
 
@@ -35,9 +58,7 @@ df$testgroupname = as.factor(df$testgroupname)
 df$Platform = as.factor(df$Platform)
 df$VisitorType = as.factor(df$VisitorType)
 
-# Make NULL values "other"
-df$MkcName[is.na(df$MkcName)] = '(Other)'
-# df$MkcName['(Other)'] = "AA_OTHER";
+
 
 df$MkcName = as.factor(df$MkcName)
 df$PriceBucket = as.factor(df$PriceBucket)
@@ -53,7 +74,7 @@ df$isshipsintime = as.logical(df$isshipsintime)
 # Create derived target (abandoned cart)
 #
 
-df$drop_cart <- ( df$HadReceiptPage == FALSE & df$HadBasket == TRUE)
+df$drop_cart <- (df$HadReceiptPage == FALSE & df$HadBasket == TRUE)
 
 #
 # Inspect this data a bit and check for integrity
@@ -89,6 +110,29 @@ test = df[-trainingCases, ]
 
 
 # Create the Model 
+<<<<<<< HEAD:Wayfair - Tree.R
+control = rpart.control(minsplit=100, minbucket=10, cp=0.001)
+model = rpart(drop_cart ~ ., data=train, control = control)
+rpart.plot(model)
+
+pred = predict(model, test)
+predTF = pred > .5
+
+errorRate = sum(predTF != test$drop_cart)/nrow(test)
+errorBench = benchmarkErrorRate(train$drop_cart, test$drop_cart)
+errorRate
+errorBench
+
+CrossTable(predTF, test$drop_cart, expected = F, prop.r = F, proop.c = F, prop.t=F, prop.chisq=F)
+
+#False Negative Rate: FN/(TP+FN) : 1 - sensitivity
+fnr = 3954/(3564+3954) #52.6%
+
+#False Positive Rate: FP/(FP+TB) : 1 - Specificity
+fpr = 445/(445+32037) #1.37%
+
+hist(pred)
+=======
 model = glm(drop_cart ~ ., data=train, family=binomial) # Generalized Linear Model
 # Step the Model Down
 #step_model = step(model) # Step did not remove any variables
@@ -122,3 +166,4 @@ fnr = 3940/(3578+3940) # 52%
 # 
 # False Postive Rate :  FP/(FP+TN) : 1-Specificity 
 fpr = 478/(478+32004) # 2%
+>>>>>>> 455b6c6f468d5f862792dc57021f901e12c5f635:wayfair_logistic_regression.R
