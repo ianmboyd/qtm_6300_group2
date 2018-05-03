@@ -118,16 +118,69 @@ test = df[-trainingCases, ]
 # Create the Model 
 model = glm(drop_cart ~ ., data=train, family=binomial) # Generalized Linear Model
 # Step the Model Down
-step_model = step(model) # Step did not remove any variables
+#step_model = step(model) # Step did not remove any variables
 
 # Run some predictions...
 # 
 pred = predict(model, test, type="response")
 hist(pred) # look at the distribution of predicted responses
 
-# Based on this histogram, the model is 
+summary(model)
+# Coefficients:
+#   Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)                            1.552071   0.185356   8.373  < 2e-16 ***
+#   testgroupnameshow SIT                 -0.247463   0.062759  -3.943 8.05e-05 ***
+#   VisitorType2                           0.013995   0.086312   0.162 0.871193    
+# VisitorType3                          -0.307283   0.080773  -3.804 0.000142 ***
+#   VisitorType4                          -0.595649   0.073571  -8.096 5.67e-16 ***
+#   Platform2                              0.802250   0.047911  16.745  < 2e-16 ***
+#   MkcNameAppliances                     -0.466259   0.368851  -1.264 0.206200    
+# MkcNameBedding                         0.182742   0.135919   1.344 0.178791    
+# MkcNameDecorative Accents              0.436532   0.138493   3.152 0.001621 ** 
+#   MkcNameEducation                       0.129113   0.337193   0.383 0.701790    
+# MkcNameEntertainment Furniture         0.358789   0.156150   2.298 0.021578 *  
+#   MkcNameFlooring                        1.350481   0.321954   4.195 2.73e-05 ***
+#   MkcNameFurniture - Bedroom            -0.140368   0.154457  -0.909 0.363466    
+# MkcNameFurniture - Kitchen and Dining  0.177525   0.153741   1.155 0.248211    
+# MkcNameHardware                        0.780156   0.298574   2.613 0.008977 ** 
+#   MkcNameHeating & Grills               -0.419420   0.209618  -2.001 0.045406 *  
+#   MkcNameKitchen                        -0.080189   0.168185  -0.477 0.633512    
+# MkcNameLighting                        0.603919   0.150257   4.019 5.84e-05 ***
+#   MkcNameMattresses                     -0.574491   0.189942  -3.025 0.002490 ** 
+#   MkcNameOffice                          0.003015   0.167930   0.018 0.985676    
+# MkcNameOutdoor                        -0.085400   0.217519  -0.393 0.694607    
+# MkcNameOutdoor Decor and Structures   -0.095665   0.198695  -0.481 0.630185    
+# MkcNamePet                             0.175389   0.215985   0.812 0.416766    
+# MkcNamePlumbing                        0.322129   0.198955   1.619 0.105424    
+# MkcNameRecreation                     -0.355242   0.228527  -1.554 0.120068    
+# MkcNameRugs                            0.650429   0.148582   4.378 1.20e-05 ***
+#   MkcNameSeasonal Decor                  0.191560   0.155723   1.230 0.218649    
+# MkcNameSmall Electrics                -0.382244   0.201348  -1.898 0.057641 .  
+# MkcNameStorage and Org                 0.178100   0.160475   1.110 0.267073    
+# MkcNameTabletop                        0.003287   0.156316   0.021 0.983224    
+# MkcNameUpholstery                     -0.055723   0.153605  -0.363 0.716778    
+# MkcNameYouth                          -0.004855   0.175620  -0.028 0.977947    
+# MkcNameOTHER                           1.106051   0.608488   1.818 0.069110 .  
+# PriceBucket100 - 150                   0.398861   0.095290   4.186 2.84e-05 ***
+#   PriceBucket150 - 200                   0.507537   0.103658   4.896 9.77e-07 ***
+#   PriceBucket20 - 40                     0.185054   0.085728   2.159 0.030879 *  
+#   PriceBucket200 - 250                   0.401041   0.117295   3.419 0.000628 ***
+#   PriceBucket250 - 300                   0.642257   0.126145   5.091 3.55e-07 ***
+#   PriceBucket300 - 400                   0.716444   0.125212   5.722 1.05e-08 ***
+#   PriceBucket40 - 60                     0.368886   0.090624   4.071 4.69e-05 ***
+#   PriceBucket400 - 500                   0.791991   0.148189   5.344 9.07e-08 ***
+#   PriceBucket500 - 600                   0.759142   0.183476   4.138 3.51e-05 ***
+#   PriceBucket60 - 80                     0.357849   0.099273   3.605 0.000313 ***
+#   PriceBucket600 - 700                   0.792605   0.236183   3.356 0.000791 ***
+#   PriceBucket700 +                       1.181884   0.175619   6.730 1.70e-11 ***
+#   PriceBucket80 - 100                    0.442738   0.106876   4.143 3.43e-05 ***
+#   PriceBucketunknown                    -2.206182   0.506860  -4.353 1.35e-05 ***
+#   HadPDPTRUE                            -2.017465   0.057239 -35.247  < 2e-16 ***
+#   isshipsintimeTRUE                     -0.254324   0.042815  -5.940 2.85e-09 ***
+#   SessionCount                           0.744471   0.051997  14.318  < 2e-16 ***
 
-predTF = pred >.60
+#Take a threshold of confidence 
+predTF = pred >.50
 
 
 errorRate = sum(predTF != test$drop_cart)/nrow(test)
@@ -140,21 +193,20 @@ CrossTable(predTF, test$drop_cart, expected = F, prop.r = F, prop.c = F, prop.t 
 #              | test$drop_cart 
 #       predTF |     FALSE |      TRUE | Row Total | 
 # -------------|-----------|-----------|-----------|
-#        FALSE |     32004 |      3940 |     35944 | 
+#        FALSE |       769 |       597 |      1366 | 
 # -------------|-----------|-----------|-----------|
-#         TRUE |       478 |      3578 |      4056 | 
+#         TRUE |      1895 |      6954 |      8849 | 
 # -------------|-----------|-----------|-----------|
-# Column Total |     32482 |      7518 |     40000 | 
+# Column Total |      2664 |      7551 |     10215 | 
 # -------------|-----------|-----------|-----------|
-# 
 
 # 
 # False Negative Rate : FN/(TP+FN) : 1-Sensitivity 
-fnr = 3940/(3578+3940) # 52%
+fnr = 597/(6954+597) # 8%
 
 # 
 # False Postive Rate :  FP/(FP+TN) : 1-Specificity 
-fpr = 478/(478+32004) #  < 2%
+fpr = 1895/(1895+769) #  < 71%
 
 
 ############################################################################
@@ -177,7 +229,82 @@ test = new_df[-trainingCases, ]
 # Create the Model 
 model = glm(drop_cart ~ ., data=train, family=binomial) # Generalized Linear Model
 # Step the Model Down
-step_model = step(model) # Step did not remove any variables
+step_model = step(model) # REMOVES a bunch of the product categories which are not useful.
 
+summary(step_model)
+
+# 
+# Coefficients:
+#   Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)                               1.52542    0.13529  11.275  < 2e-16 ***
+#   testgroupnameshow SIT                    -0.16957    0.06246  -2.715 0.006632 ** 
+#   VisitorType2                              0.20066    0.08617   2.329 0.019871 *  
+#   VisitorType3                             -0.20169    0.08012  -2.517 0.011820 *  
+#   VisitorType4                             -0.53504    0.07250  -7.379 1.59e-13 ***
+#   Platform2                                 0.69723    0.04727  14.750  < 2e-16 ***
+#   PriceBucket100 - 150                      0.37836    0.09158   4.132 3.60e-05 ***
+#   PriceBucket150 - 200                      0.47697    0.09802   4.866 1.14e-06 ***
+#   PriceBucket20 - 40                        0.20631    0.08340   2.474 0.013365 *  
+#   PriceBucket200 - 250                      0.47943    0.11142   4.303 1.69e-05 ***
+#   PriceBucket250 - 300                      0.70877    0.12245   5.788 7.11e-09 ***
+#   PriceBucket300 - 400                      0.77642    0.11935   6.505 7.75e-11 ***
+#   PriceBucket40 - 60                        0.42127    0.08837   4.767 1.87e-06 ***
+#   PriceBucket400 - 500                      0.86726    0.14523   5.972 2.35e-09 ***
+#   PriceBucket500 - 600                      0.79543    0.18400   4.323 1.54e-05 ***
+#   PriceBucket60 - 80                        0.40719    0.09730   4.185 2.86e-05 ***
+#   PriceBucket600 - 700                      0.91745    0.24058   3.813 0.000137 ***
+#   PriceBucket700 +                          1.28994    0.17781   7.254 4.03e-13 ***
+#   PriceBucket80 - 100                       0.46023    0.10489   4.388 1.14e-05 ***
+#   PriceBucketunknown                       -2.36959    0.51751  -4.579 4.68e-06 ***
+#   HadPDPTRUE                               -1.97055    0.05609 -35.129  < 2e-16 ***
+#   isshipsintimeTRUE                        -0.22308    0.04269  -5.226 1.73e-07 ***
+#   SessionCount                              0.75794    0.05186  14.616  < 2e-16 ***
+#   `df$MkcNameAppliances`                   -0.54842    0.36026  -1.522 0.127940    
+# `df$MkcNameDecorative Accents`            0.26896    0.06786   3.963 7.39e-05 ***
+#   `df$MkcNameFlooring`                      1.13878    0.28810   3.953 7.73e-05 ***
+#   `df$MkcNameFurniture - Bedroom`          -0.25994    0.10297  -2.524 0.011592 *  
+#   `df$MkcNameHardware`                      0.93362    0.28521   3.273 0.001062 ** 
+#   `df$MkcNameHeating & Grills`             -0.59513    0.17314  -3.437 0.000587 ***
+#   `df$MkcNameKitchen`                      -0.41935    0.11664  -3.595 0.000324 ***
+#   `df$MkcNameLighting`                      0.41227    0.09126   4.518 6.25e-06 ***
+#   `df$MkcNameMattresses`                   -0.88395    0.14165  -6.240 4.36e-10 ***
+#   `df$MkcNameOffice`                       -0.24582    0.11391  -2.158 0.030922 *  
+#   `df$MkcNameOutdoor`                      -0.28366    0.18739  -1.514 0.130085    
+# `df$MkcNameOutdoor Decor and Structures` -0.36342    0.15702  -2.314 0.020643 *  
+#   `df$MkcNameRecreation`                   -0.31035    0.20583  -1.508 0.131616    
+# `df$MkcNameRugs`                          0.38630    0.08555   4.516 6.32e-06 ***
+#   `df$MkcNameSmall Electrics`              -0.62977    0.16755  -3.759 0.000171 ***
+#   `df$MkcNameTabletop`                     -0.16066    0.09709  -1.655 0.097972 .  
+# `df$MkcNameUpholstery`                   -0.26959    0.10417  -2.588 0.009653 ** 
+# 
 pred = predict(step_model, test, type="response")
 hist(pred) # look at the distribution of predicted responses
+
+predTF = pred >.5
+
+
+errorRate = sum(predTF != test$drop_cart)/nrow(test)
+
+
+errorBench = benchmarkErrorRate(train$drop_cart, test$drop_cart)
+
+
+CrossTable(predTF, test$drop_cart, expected = F, prop.r = F, prop.c = F, prop.t = F, prop.chisq = F)
+#              | test$drop_cart 
+#       predTF |     FALSE |      TRUE | Row Total | 
+# -------------|-----------|-----------|-----------|
+#        FALSE |       718 |       552 |      1270 | 
+# -------------|-----------|-----------|-----------|
+#         TRUE |      1939 |      7006 |      8945 | 
+# -------------|-----------|-----------|-----------|
+# Column Total |      2657 |      7558 |     10215 | 
+# -------------|-----------|-----------|-----------|
+# 
+
+# 
+# False Negative Rate : FN/(TP+FN) : 1-Sensitivity 
+fnr = 552/(7006+552) # 7%
+
+# 
+# False Postive Rate :  FP/(FP+TN) : 1-Specificity 
+fpr = 1939/(1939+718) #  < 72%
