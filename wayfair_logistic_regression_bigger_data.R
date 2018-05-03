@@ -28,12 +28,10 @@ df$HadBasket = as.logical(df$HadBasket)
 #
 # Only look at those who had a basket
 # 
-#df = df[df$HadBasket == 1, ]
+df = df[df$HadBasket == 1, ]
 
 # Make NULL values "other"
-#bad_rows = is.na(df$MkcName);
-#df = df[!bad_rows, ]
-df$MkcName[is.na(df$MkcName)] = "AA_UNKNOWN";
+df$MkcName[is.na(df$MkcName)] = "AA_OTHER";
 
 df$HadReceiptPage = as.factor(df$HadReceiptPage)
 df$HadReceiptPage = as.logical(df$HadReceiptPage)

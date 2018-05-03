@@ -2,6 +2,7 @@
 set.seed(1234)
 library(readr)
 library(gmodels)
+library(rockchalk) # handy level collapsing
 
 
 IAN = TRUE
@@ -28,12 +29,9 @@ df$HadBasket = as.logical(df$HadBasket)
 #
 # Only look at those who had a basket
 # 
-#df = df[df$HadBasket == 1, ]
+df = df[df$HadBasket == 1, ]
 
-# Make NULL values "other"
-#bad_rows = is.na(df$MkcName);
-#df = df[!bad_rows, ]
-df$MkcName[is.na(df$MkcName)] = "AA_UNKNOWN";
+
 
 df$HadReceiptPage = as.factor(df$HadReceiptPage)
 df$HadReceiptPage = as.logical(df$HadReceiptPage)
@@ -43,7 +41,9 @@ df$Platform = as.factor(df$Platform)
 df$VisitorType = as.factor(df$VisitorType)
 
 
+df$MkcName[is.na(df$MkcName)] = "OTHER"
 df$MkcName = as.factor(df$MkcName)
+
 df$PriceBucket = as.factor(df$PriceBucket)
 
 df$HadPDP = as.factor(df$HadPDP)
@@ -65,6 +65,7 @@ convert_rate = sum(df$HadReceiptPage) / nrow(df); # % of people who checked out 
 abandon_rate = sum(df$drop_cart) / sum(df$HadBasket); # % of people who had a basket that abandoned it - 0.7402201
 
 
+
 # Clean data
 
 #Remove un-needed columns
@@ -79,10 +80,26 @@ df$HashSKU = NULL; # Random-Anonymized product information (not useful)
 df$HadBasket = NULL 
 df$HadReceiptPage = NULL
 
+# Look at some other parts of the data
+# 
+product_categories = summary(df$MkcName) # get all the levels of MkcName - there are 35 of them
+price_buckets = summary(df$PriceBucket) # 15 price buckets
+
+#
+# Because there are so many levels, 
+# with some of them don't have many occurrances in the set, 
+# and likely aren't too influential.
+#
+
+plot(sort(product_categories)[1:10], ylab="Frequency", xlab="Rank") # 8/36 have counts ~< 20, 
+
+# let's collapse them into a single factor
+collapse_set = names(sort(product_categories)[1:8]);
+df$MkcName = combineLevels(df$MkcName, levs=collapse_set, newLabel = c('OTHER'))
 
 # Create a test and training set
 n = nrow(df)
-trainingCases = sample(n, round(n*.60))
+trainingCases = sample(n, round(n*.60)) # 60/40 split
 
 train = df[trainingCases, ]
 test = df[-trainingCases, ]
@@ -91,7 +108,7 @@ test = df[-trainingCases, ]
 # Create the Model 
 model = glm(drop_cart ~ ., data=train, family=binomial) # Generalized Linear Model
 # Step the Model Down
-#step_model = step(model) # Step did not remove any variables
+step_model = step(model) # Step did not remove any variables
 
 # Run some predictions...
 # 
@@ -100,8 +117,7 @@ hist(pred) # look at the distribution of predicted responses
 
 # Based on this histogram, the model is 
 
-predTF = pred >.25
-
+predTF = pred >.60
 
 
 errorRate = sum(predTF != test$drop_cart)/nrow(test)
