@@ -3,6 +3,7 @@ set.seed(1234)
 library(readr)
 library(gmodels)
 library(rockchalk) # handy level collapsing
+library(ggplot2)
 
 
 IAN = TRUE
@@ -26,13 +27,6 @@ if( IAN ){
 df$HadBasket = as.factor(df$HadBasket)
 df$HadBasket = as.logical(df$HadBasket)
 
-#
-# Only look at those who had a basket
-# 
-df = df[df$HadBasket == 1, ]
-
-
-
 df$HadReceiptPage = as.factor(df$HadReceiptPage)
 df$HadReceiptPage = as.logical(df$HadReceiptPage)
 
@@ -40,8 +34,7 @@ df$testgroupname = as.factor(df$testgroupname)
 df$Platform = as.factor(df$Platform)
 df$VisitorType = as.factor(df$VisitorType)
 
-
-df$MkcName[is.na(df$MkcName)] = "OTHER"
+df$MkcName[is.na(df$MkcName)] = "OTHER" # Handle observations without a product category
 df$MkcName = as.factor(df$MkcName)
 
 df$PriceBucket = as.factor(df$PriceBucket)
@@ -52,9 +45,14 @@ df$HadPDP = as.logical(df$HadPDP)
 df$isshipsintime = as.logical(df$isshipsintime)
 
 #
+# Only look at those who had a basket
+# If we looked at people who never had a basket in the first place, our results would be skewed.
+# 
+df = df[df$HadBasket == 1, ]
+
+#
 # Create derived target (abandoned cart)
 #
-
 df$drop_cart <- ( df$HadReceiptPage == FALSE & df$HadBasket == TRUE)
 
 #
@@ -65,9 +63,10 @@ convert_rate = sum(df$HadReceiptPage) / nrow(df); # % of people who checked out 
 abandon_rate = sum(df$drop_cart) / sum(df$HadBasket); # % of people who had a basket that abandoned it - 0.7402201
 
 
-
+#
 # Clean data
-
+#
+#
 #Remove un-needed columns
 
 df$TestID = NULL; # Same for all observations (not interesting)
@@ -76,14 +75,16 @@ df$opid = NULL; # Non-Descriptive information
 df$HashSKU = NULL; # Random-Anonymized product information (not useful)
 
 
-# Remove variables used to derive target
+# Remove variables used to derive target - otherwise they will count double and influence results
 df$HadBasket = NULL 
 df$HadReceiptPage = NULL
 
+#
 # Look at some other parts of the data
 # 
 product_categories = summary(df$MkcName) # get all the levels of MkcName - there are 35 of them
 price_buckets = summary(df$PriceBucket) # 15 price buckets
+
 
 #
 # Because there are so many levels, 
@@ -96,6 +97,15 @@ plot(sort(product_categories)[1:10], ylab="Frequency", xlab="Rank") # 8/36 have 
 # let's collapse them into a single factor
 collapse_set = names(sort(product_categories)[1:8]);
 df$MkcName = combineLevels(df$MkcName, levs=collapse_set, newLabel = c('OTHER'))
+
+pie(summary(df$PriceBucket), main="Price Buckets")
+min(summary(df$PriceBucket)) # 33
+max(summary(df$PriceBucket)) # 4285
+
+pie(summary(df$MkcName), main="Product Categories")
+min(summary(df$MkcName)) # 46
+max(summary(df$MkcName)) # 4010
+
 
 # Create a test and training set
 n = nrow(df)
@@ -146,3 +156,28 @@ fnr = 3940/(3578+3940) # 52%
 # False Postive Rate :  FP/(FP+TN) : 1-Specificity 
 fpr = 478/(478+32004) #  < 2%
 
+
+############################################################################
+############################################################################
+############################################################################
+############################################################################
+# Let's try this again, with a more horizontal data structure
+#
+mm = model.matrix(~df$MkcName-1, df) # expand the product categories into a DF of booleans
+new_df = cbind(df, mm) # create a new DF with all the products as new variables
+new_df$MkcName = NULL # remove the source column
+
+# Create a test and training set
+n = nrow(new_df)
+trainingCases = sample(n, round(n*.60)) # 60/40 split
+
+train = new_df[trainingCases, ]
+test = new_df[-trainingCases, ]
+
+# Create the Model 
+model = glm(drop_cart ~ ., data=train, family=binomial) # Generalized Linear Model
+# Step the Model Down
+step_model = step(model) # Step did not remove any variables
+
+pred = predict(step_model, test, type="response")
+hist(pred) # look at the distribution of predicted responses
