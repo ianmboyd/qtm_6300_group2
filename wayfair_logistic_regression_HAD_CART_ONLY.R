@@ -4,6 +4,7 @@ library(readr)
 library(gmodels)
 library(rockchalk) # handy level collapsing
 library(ggplot2)
+library(DescTools) # using this for MAPE and RMSE below
 
 
 IAN = TRUE
@@ -92,10 +93,10 @@ price_buckets = summary(df$PriceBucket) # 15 price buckets
 # and likely aren't too influential.
 #
 
-plot(sort(product_categories)[1:10], ylab="Frequency", xlab="Rank") # 8/36 have counts ~< 20, 
+plot(sort(product_categories)[1:25], ylab="Frequency", xlab="Rank") # 21/36 have counts ~< 500, 
 
 # let's collapse them into a single factor
-collapse_set = names(sort(product_categories)[1:8]);
+collapse_set = names(sort(product_categories)[1:21]);
 df$MkcName = combineLevels(df$MkcName, levs=collapse_set, newLabel = c('OTHER'))
 
 pie(summary(df$PriceBucket), main="Price Buckets")
@@ -125,59 +126,7 @@ model = glm(drop_cart ~ ., data=train, family=binomial) # Generalized Linear Mod
 pred = predict(model, test, type="response")
 hist(pred) # look at the distribution of predicted responses
 
-summary(model)
-# Coefficients:
-#   Estimate Std. Error z value Pr(>|z|)    
-# (Intercept)                            1.552071   0.185356   8.373  < 2e-16 ***
-#   testgroupnameshow SIT                 -0.247463   0.062759  -3.943 8.05e-05 ***
-#   VisitorType2                           0.013995   0.086312   0.162 0.871193    
-# VisitorType3                          -0.307283   0.080773  -3.804 0.000142 ***
-#   VisitorType4                          -0.595649   0.073571  -8.096 5.67e-16 ***
-#   Platform2                              0.802250   0.047911  16.745  < 2e-16 ***
-#   MkcNameAppliances                     -0.466259   0.368851  -1.264 0.206200    
-# MkcNameBedding                         0.182742   0.135919   1.344 0.178791    
-# MkcNameDecorative Accents              0.436532   0.138493   3.152 0.001621 ** 
-#   MkcNameEducation                       0.129113   0.337193   0.383 0.701790    
-# MkcNameEntertainment Furniture         0.358789   0.156150   2.298 0.021578 *  
-#   MkcNameFlooring                        1.350481   0.321954   4.195 2.73e-05 ***
-#   MkcNameFurniture - Bedroom            -0.140368   0.154457  -0.909 0.363466    
-# MkcNameFurniture - Kitchen and Dining  0.177525   0.153741   1.155 0.248211    
-# MkcNameHardware                        0.780156   0.298574   2.613 0.008977 ** 
-#   MkcNameHeating & Grills               -0.419420   0.209618  -2.001 0.045406 *  
-#   MkcNameKitchen                        -0.080189   0.168185  -0.477 0.633512    
-# MkcNameLighting                        0.603919   0.150257   4.019 5.84e-05 ***
-#   MkcNameMattresses                     -0.574491   0.189942  -3.025 0.002490 ** 
-#   MkcNameOffice                          0.003015   0.167930   0.018 0.985676    
-# MkcNameOutdoor                        -0.085400   0.217519  -0.393 0.694607    
-# MkcNameOutdoor Decor and Structures   -0.095665   0.198695  -0.481 0.630185    
-# MkcNamePet                             0.175389   0.215985   0.812 0.416766    
-# MkcNamePlumbing                        0.322129   0.198955   1.619 0.105424    
-# MkcNameRecreation                     -0.355242   0.228527  -1.554 0.120068    
-# MkcNameRugs                            0.650429   0.148582   4.378 1.20e-05 ***
-#   MkcNameSeasonal Decor                  0.191560   0.155723   1.230 0.218649    
-# MkcNameSmall Electrics                -0.382244   0.201348  -1.898 0.057641 .  
-# MkcNameStorage and Org                 0.178100   0.160475   1.110 0.267073    
-# MkcNameTabletop                        0.003287   0.156316   0.021 0.983224    
-# MkcNameUpholstery                     -0.055723   0.153605  -0.363 0.716778    
-# MkcNameYouth                          -0.004855   0.175620  -0.028 0.977947    
-# MkcNameOTHER                           1.106051   0.608488   1.818 0.069110 .  
-# PriceBucket100 - 150                   0.398861   0.095290   4.186 2.84e-05 ***
-#   PriceBucket150 - 200                   0.507537   0.103658   4.896 9.77e-07 ***
-#   PriceBucket20 - 40                     0.185054   0.085728   2.159 0.030879 *  
-#   PriceBucket200 - 250                   0.401041   0.117295   3.419 0.000628 ***
-#   PriceBucket250 - 300                   0.642257   0.126145   5.091 3.55e-07 ***
-#   PriceBucket300 - 400                   0.716444   0.125212   5.722 1.05e-08 ***
-#   PriceBucket40 - 60                     0.368886   0.090624   4.071 4.69e-05 ***
-#   PriceBucket400 - 500                   0.791991   0.148189   5.344 9.07e-08 ***
-#   PriceBucket500 - 600                   0.759142   0.183476   4.138 3.51e-05 ***
-#   PriceBucket60 - 80                     0.357849   0.099273   3.605 0.000313 ***
-#   PriceBucket600 - 700                   0.792605   0.236183   3.356 0.000791 ***
-#   PriceBucket700 +                       1.181884   0.175619   6.730 1.70e-11 ***
-#   PriceBucket80 - 100                    0.442738   0.106876   4.143 3.43e-05 ***
-#   PriceBucketunknown                    -2.206182   0.506860  -4.353 1.35e-05 ***
-#   HadPDPTRUE                            -2.017465   0.057239 -35.247  < 2e-16 ***
-#   isshipsintimeTRUE                     -0.254324   0.042815  -5.940 2.85e-09 ***
-#   SessionCount                           0.744471   0.051997  14.318  < 2e-16 ***
+summary(model) # look here yourself....
 
 #Take a threshold of confidence 
 predTF = pred >.50
@@ -189,25 +138,25 @@ errorRate = sum(predTF != test$drop_cart)/nrow(test)
 errorBench = benchmarkErrorRate(train$drop_cart, test$drop_cart)
 
 
-CrossTable(predTF, test$drop_cart, expected = F, prop.r = F, prop.c = F, prop.t = F, prop.chisq = F)
-#              | test$drop_cart 
-#       predTF |     FALSE |      TRUE | Row Total | 
-# -------------|-----------|-----------|-----------|
-#        FALSE |       769 |       597 |      1366 | 
-# -------------|-----------|-----------|-----------|
-#         TRUE |      1895 |      6954 |      8849 | 
-# -------------|-----------|-----------|-----------|
-# Column Total |      2664 |      7551 |     10215 | 
-# -------------|-----------|-----------|-----------|
+ct = CrossTable(predTF, test$drop_cart, expected = F, prop.r = F, prop.c = F, prop.t = F, prop.chisq = F)
+print(ct)
 
 # 
-# False Negative Rate : FN/(TP+FN) : 1-Sensitivity 
-fnr = 597/(6954+597) # 8%
+# False Negative Rate : FN/(FN+TP) : 1-Sensitivity 
+# > 522/(522+6999)
+# [1] 0.06940566
 
 # 
 # False Postive Rate :  FP/(FP+TN) : 1-Specificity 
-fpr = 1895/(1895+769) #  < 71%
+# 2012/(2012+682)
+# [1] 0.7468448
 
+#
+# DO RMSE
+# Can't do MAPE because target is categorical
+# 
+
+RMSE = RMSE(predTF, test$drop_cart)
 
 ############################################################################
 ############################################################################
