@@ -18,7 +18,6 @@ if( IAN ){
   df = read_csv("C:/Users/wolfeb3/desktop/wayfair_click_stream_short.csv")
 }
 
-
 # Clean data
 
 #Remove un-needed columns
@@ -29,26 +28,18 @@ df$opid = NULL;
 df$HashSKU = NULL;
 #df = df[df$HadBasket == TRUE, ]
 
+
 #
 # Format Data
 #
 #
 df$HadBasket = as.factor(df$HadBasket)
 df$HadBasket = as.logical(df$HadBasket)
-
-
 #df = df[df$HadBasket == 1, ]
 
 
-#
-# Only look at those who had a basket
-# 
-df = df[df$HadBasket == 1, ]
-
-# Make NULL values "other"
-df$MkcName[is.na(df$MkcName)] = '(Other)'
-# df$MkcName['(Other)'] = "AA_OTHER";
-
+df$HadBasket = as.factor(df$HadBasket)
+df$HadBasket = as.logical(df$HadBasket)
 df$HadReceiptPage = as.factor(df$HadReceiptPage)
 df$HadReceiptPage = as.logical(df$HadReceiptPage)
 
@@ -56,7 +47,9 @@ df$testgroupname = as.factor(df$testgroupname)
 df$Platform = as.factor(df$Platform)
 df$VisitorType = as.factor(df$VisitorType)
 
-
+# Make NULL values "other"
+df$MkcName[is.na(df$MkcName)] = '(Other)'
+# df$MkcName['(Other)'] = "AA_OTHER";
 
 df$MkcName = as.factor(df$MkcName)
 df$PriceBucket = as.factor(df$PriceBucket)
@@ -66,7 +59,10 @@ df$HadPDP = as.logical(df$HadPDP)
 
 df$isshipsintime = as.logical(df$isshipsintime)
 
-
+df$TestID = NULL;
+df$sessionstartdate = NULL;
+df$opid = NULL;
+df$HashSKU = NULL;
 
 #
 # Create derived target (abandoned cart)
@@ -79,38 +75,25 @@ df$drop_cart <- (df$HadReceiptPage == FALSE & df$HadBasket == TRUE)
 # 
 
 convert_rate = sum(df$HadReceiptPage) / nrow(df); # % of people who checked out - 0.07426
-abandon_rate = sum(df$drop_cart) / sum(df$HadBasket); # % of people who had a basket that abandoned it - 0.7402201
+abandon_rate = sum(df$drop_cart) / nrow(df); # % of people who had a basket that abandoned it - 0.18903
 
-
-
-# Clean data
-
-#Remove un-needed columns
-
-df$TestID = NULL;
-df$sessionstartdate = NULL;
-df$opid = NULL;
-df$HashSKU = NULL;
-
-
+df_new <- df_new[df_new$HadBasket,]
 
 # Remove variables used to derive target
-df$HadBasket = NULL
-df$HadReceiptPage = NULL
+#df$HadBasket = NULL
+#df$HadReceiptPage = NULL
 
 
 # Create a test and training set
-n = nrow(df)
+n = nrow(df_new)
 trainingCases = sample(n, round(n*.60))
-
-train = df[trainingCases, ]
-test = df[-trainingCases, ]
+train = df_new[trainingCases, ]
+test = df_new[-trainingCases, ]
 
 
 # Create the Model 
-
 control = rpart.control(minsplit=100, minbucket=10, cp=0.001)
-model = rpart(drop_cart ~ ., data=train, control = control)
+model = rpart(HadReceiptPage ~ ., data=train, control = control)
 rpart.plot(model)
 
 pred = predict(model, test)
@@ -130,7 +113,7 @@ fnr = 3954/(3564+3954) #52.6%
 fpr = 445/(445+32037) #1.37%
 
 hist(pred)
-
+=======
 model = glm(drop_cart ~ ., data=train, family=binomial) # Generalized Linear Model
 # Step the Model Down
 #step_model = step(model) # Step did not remove any variables
@@ -164,4 +147,4 @@ fnr = 3940/(3578+3940) # 52%
 # 
 # False Postive Rate :  FP/(FP+TN) : 1-Specificity 
 fpr = 478/(478+32004) # 2%
-
+>>>>>>> 455b6c6f468d5f862792dc57021f901e12c5f635:wayfair_logistic_regression.R
