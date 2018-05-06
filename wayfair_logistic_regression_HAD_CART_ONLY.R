@@ -28,6 +28,8 @@ if( IAN ){
 df$HadBasket = as.factor(df$HadBasket)
 df$HadBasket = as.logical(df$HadBasket)
 
+cart_rate = sum(df$HadBasket) / nrow(df)
+
 df$HadReceiptPage = as.factor(df$HadReceiptPage)
 df$HadReceiptPage = as.logical(df$HadReceiptPage)
 
@@ -62,6 +64,8 @@ df$drop_cart <- ( df$HadReceiptPage == FALSE & df$HadBasket == TRUE)
 
 convert_rate = sum(df$HadReceiptPage) / nrow(df); # % of people who checked out - 0.07426
 abandon_rate = sum(df$drop_cart) / sum(df$HadBasket); # % of people who had a basket that abandoned it - 0.7402201
+convert_basket_holders = sum(df$HadReceiptPage) / sum(df$HadBasket) # % of people who created a basked but then converted
+
 
 
 #
@@ -96,7 +100,7 @@ price_buckets = summary(df$PriceBucket) # 15 price buckets
 plot(sort(product_categories)[1:25], ylab="Frequency", xlab="Rank") # 21/36 have counts ~< 500, 
 
 # let's collapse them into a single factor
-collapse_set = names(sort(product_categories)[1:21]);
+collapse_set = names(sort(product_categories)[1:10]);
 df$MkcName = combineLevels(df$MkcName, levs=collapse_set, newLabel = c('OTHER'))
 
 pie(summary(df$PriceBucket), main="Price Buckets")
@@ -124,12 +128,14 @@ model = glm(drop_cart ~ ., data=train, family=binomial) # Generalized Linear Mod
 # Run some predictions...
 # 
 pred = predict(model, test, type="response")
-hist(pred) # look at the distribution of predicted responses
+
+hist(pred, main="Prediction Distribution", xlab="Prediction Confidence (%)", ylab="Number of Observations") 
+# look at the distribution of predicted responses
 
 summary(model) # look here yourself....
 
 #Take a threshold of confidence 
-predTF = pred >.50
+predTF = pred >.5
 
 
 errorRate = sum(predTF != test$drop_cart)/nrow(test)
@@ -153,7 +159,7 @@ print(ct)
 
 #
 # DO RMSE
-# Can't do MAPE because target is categorical
+# Can't do MAPE because target is categoricald
 # 
 
 RMSE = RMSE(predTF, test$drop_cart)
